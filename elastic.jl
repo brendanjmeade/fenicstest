@@ -1,6 +1,7 @@
 using Revise
 using FEniCS
 using PyPlot
+using PyCall
 
 
 # Calculate strain
@@ -13,6 +14,14 @@ end
 function stress(u, lambda, mu)
      lambda * nabla_div(u) * Identity(2) + 2 * mu * strain(u)
 end
+
+function interior_eval(u, x, y)
+    py"""
+    def G(u, x, y):
+        return u(x, y)
+    """
+    py"G"(u.pyobject, 1, 1)
+end 
 
 
 function elastic()
@@ -37,7 +46,7 @@ function elastic()
     L = dot(f, v) * dx + dot(T, v) * ds
     u = FeFunction(V)
     lvsolve(a, L, u, bc)
-    ueval = u(1, 1)
+    ueval = interior_eval(u, 1, 1)
     @show ueval
 end
 elastic()
